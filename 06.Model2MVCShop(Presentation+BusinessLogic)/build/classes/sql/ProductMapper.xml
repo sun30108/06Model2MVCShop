@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductMapper">
+ 	
+ 	
+	<resultMap id="productSelectMap" type="product">
+		<result property="prodNo" 			column="prod_no" 			jdbcType="NUMERIC"/>
+		<result property="prodName"	column="prod_name" 		jdbcType="VARCHAR" />
+		<result property="prodDetail" 	column="prod_detail" 		jdbcType="VARCHAR" />
+		<result property="manuDate" 				column="manufacture_day" 					jdbcType="VARCHAR" />
+		<result property="price" 				column="price" 					jdbcType="NUMERIC" />
+		<result property="fileName" 			column="image_file" 		jdbcType="VARCHAR" />
+		<result property="regDate" 				column="reg_date" 					jdbcType="DATE" />
+		<result property="proTranCode" 			column="tran_status_code" 				jdbcType="CHAR"  />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addProduct"		parameterType="product" >
+	 	INSERT
+		INTO product( prod_no , prod_name , prod_detail , manufacture_day , price, image_file, reg_date) 
+		VALUES	 (	seq_product_prod_no.NEXTVAL , #{prodName} , #{prodDetail} , #{manuDate} , #{price} , 
+							#{fileName} , SYSDATE)
+	 </insert>
+	 
+	 
+	 <!-- SQL : SELECT ONE -->
+	 <select 	id="getProduct"	parameterType="int"	resultMap="productSelectMap">
+		SELECT p.*, (	SELECT tran_status_code 
+						FROM transaction t 
+						WHERE p.prod_no = t.prod_no) tran_status_code
+		FROM product p
+		WHERE prod_no = #{value}
+	 </select>
+	 
+	 <!-- SQL : UPDATE -->
+	 <update	id="updateProduct"	parameterType="product" >
+	   	UPDATE product
+	   	<set>
+	   		prod_name 	= #{prodName} ,
+			price	= #{price},
+			prod_detail				= #{prodDetail} ,
+			image_file				=	#{fileName}
+	   	</set>
+	   	WHERE prod_no = #{prodNo}
+	 </update>
+	 
+	 
+	 <!-- SQL : SELECT LIST -->
+	<select  id="getProductList"  parameterType="search"	resultMap="productSelectMap">
+	
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT p.*,
+											(SELECT tran_status_code 
+											FROM transaction t
+											WHERE p.prod_no = t.prod_no) tran_status_code
+										FROM product p, transaction t1
+										<choose>
+											<when test="stock != null and stock !='' and searchCondition != '' and searchCondition != null">
+												<where>
+													<if test="stock == 1 and searchCondition == 0 and searchKeyword !='' ">
+														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_no = #{searchKeyword}
+													</if>
+													<if test="stock == 1 and searchCondition == 1 and searchKeyword !='' ">
+														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_name = #{searchKeyword}
+													</if>
+													<if test="stock == 1 and searchCondition == 2 and searchKeyword !='' ">
+														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.price = #{searchKeyword}
+													</if>
+												</where>
+											</when>
+											<when test="stock != null and stock !='' and searchCondition == null and searchCondition == 0">
+												<where>
+													<if test="stock == 1">
+														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL
+													</if>
+												</where>
+											</when>
+											<when test="stock == null and stock =='' and searchCondition != null">
+												<where>
+													<if test="searchCondition == 0">
+														p.prod_no = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+													</if>
+													<if test="searchCondition == 1">
+														p.prod_name = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+													</if>
+													<if test="searchCondition == 2">
+														p.price = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+													</if>
+												</where>
+											</when>
+											<otherwise>
+												<where>
+													p.prod_no = t1.prod_no(+)
+												</where>
+											</otherwise>
+										</choose>
+										<choose>
+										<when test="sortCondition == 1">
+											ORDER BY p.price DESC ) inner_table
+										</when>
+										<when test="sortCondition == 2">
+											ORDER BY p.price ) inner_table
+										</when>
+										<otherwise>
+											ORDER BY p.prod_no ) inner_table
+										</otherwise>
+										</choose>
+						WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+	 </select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT p.*,
+					(SELECT tran_status_code 
+					FROM transaction t
+					WHERE p.prod_no = t.prod_no) tran_status_code
+				FROM product p
+				<if test="searchCondition != null">
+					<where>
+						<if test="searchCondition == 0 and searchKeyword !='' ">
+							p.prod_no = #{searchKeyword}
+						</if>
+						<if test="searchCondition == 1 and searchKeyword !='' ">
+							p.prod_name = #{searchKeyword}
+						</if>
+						<if test="searchCondition == 2 and searchKeyword !='' ">
+							p.price = #{searchKeyword}
+						</if>
+					</where>
+				</if> ) countTable						
+	 </select>
+	 
+</mapper>
