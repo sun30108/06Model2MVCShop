@@ -109,7 +109,7 @@ public class ProductController {
 //		
 //		System.out.println("/updateProductView.do");
 //		
-//		return "aa";
+//		return "redirect:/listProduct.do?menu=manage";
 //	}
 	
 }
