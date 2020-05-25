@@ -60,44 +60,45 @@
 											WHERE p.prod_no = t.prod_no) tran_status_code
 										FROM product p, transaction t1
 										<choose>
-											<when test="stock != null and stock !='' and searchCondition != '' and searchCondition != null">
+											<when test="stock == null or stock == ''">
+												<choose>
+													<when test="searchCondition != null and searchCondition !='' and searchKeyword != ''">
+														<where>
+															<if test="searchCondition == 0">
+																p.prod_no = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+															</if>
+															<if test="searchCondition == 1">
+																p.prod_name = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+															</if>
+															<if test="searchCondition == 2">
+																p.price = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+															</if>
+														</where>
+													</when>
+													<otherwise><where>p.prod_no = t1.prod_no(+)</where></otherwise>
+												</choose>
+											</when>
+											
+											<when test="stock == 1">
+												
 												<where>
-													<if test="stock == 1 and searchCondition == 0 and searchKeyword !='' ">
+													<if test="searchCondition == 0 and searchKeyword != ''">
 														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_no = #{searchKeyword}
 													</if>
-													<if test="stock == 1 and searchCondition == 1 and searchKeyword !='' ">
-														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_name = #{searchKeyword}
+													<if test="searchCondition == 1 and searchKeyword != ''">
+														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_name LIKE '%'||#{searchKeyword}||'%'
 													</if>
-													<if test="stock == 1 and searchCondition == 2 and searchKeyword !='' ">
+													<if test="searchCondition == 2 and searchKeyword != ''">
 														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.price = #{searchKeyword}
 													</if>
-												</where>
-											</when>
-											<when test="stock != null and stock !='' and searchCondition == null and searchCondition == 0">
-												<where>
-													<if test="stock == 1">
+													<if test="searchCondition == null or searchCondition == 0 or
+															searchKeyword == '' or searchKeyword == null">
 														p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL
 													</if>
 												</where>
+												
 											</when>
-											<when test="stock == null and stock =='' and searchCondition != null">
-												<where>
-													<if test="searchCondition == 0">
-														p.prod_no = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
-													</if>
-													<if test="searchCondition == 1">
-														p.prod_name = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
-													</if>
-													<if test="searchCondition == 2">
-														p.price = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
-													</if>
-												</where>
-											</when>
-											<otherwise>
-												<where>
-													p.prod_no = t1.prod_no(+)
-												</where>
-											</otherwise>
+										
 										</choose>
 										<choose>
 										<when test="sortCondition == 1">
@@ -121,20 +122,59 @@
 					(SELECT tran_status_code 
 					FROM transaction t
 					WHERE p.prod_no = t.prod_no) tran_status_code
-				FROM product p
-				<if test="searchCondition != null">
-					<where>
-						<if test="searchCondition == 0 and searchKeyword !='' ">
-							p.prod_no = #{searchKeyword}
-						</if>
-						<if test="searchCondition == 1 and searchKeyword !='' ">
-							p.prod_name = #{searchKeyword}
-						</if>
-						<if test="searchCondition == 2 and searchKeyword !='' ">
-							p.price = #{searchKeyword}
-						</if>
-					</where>
-				</if> ) countTable						
+				FROM product p, transaction t1
+				<choose>
+					<when test="stock == null or stock == ''">
+						<choose>
+							<when test="searchCondition != null and searchCondition !='' and searchKeyword != ''">
+								<where>
+									<if test="searchCondition == 0">
+										p.prod_no = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+									</if>
+									<if test="searchCondition == 1">
+										p.prod_name = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+									</if>
+									<if test="searchCondition == 2">
+										p.price = #{searchKeyword} AND p.prod_no = t1.prod_no(+)
+									</if>
+								</where>
+							</when>
+							<otherwise><where>p.prod_no = t1.prod_no(+)</where></otherwise>
+						</choose>
+					</when>
+					
+					<when test="stock == 1">
+						
+						<where>
+							<if test="searchCondition == 0 and searchKeyword != ''">
+								p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_no = #{searchKeyword}
+							</if>
+							<if test="searchCondition == 1 and searchKeyword != ''">
+								p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.prod_name LIKE '%'||#{searchKeyword}||'%'
+							</if>
+							<if test="searchCondition == 2 and searchKeyword != ''">
+								p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL AND p.price = #{searchKeyword}
+							</if>
+							<if test="searchCondition == null or searchCondition == 0 or
+									searchKeyword == '' or searchKeyword == null">
+								p.prod_no = t1.prod_no(+) AND tran_status_code IS NULL
+							</if>
+						</where>
+						
+					</when>
+			
+				</choose>
+				<choose>
+					<when test="sortCondition == 1">
+						ORDER BY p.price DESC
+					</when>
+					<when test="sortCondition == 2">
+						ORDER BY p.price
+					</when>
+					<otherwise>
+						ORDER BY p.prod_no
+					</otherwise>
+				</choose> ) countTable						
 	 </select>
 	 
 </mapper>

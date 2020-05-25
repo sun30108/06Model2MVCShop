@@ -185,17 +185,17 @@ public class PurchaseController {
 		
 		purchaseService.updateTranCode(purchase);
 		
-		modelAndView.setViewName("redirect:/purchase/listPurchase.do");
+		modelAndView.setViewName("redirect:/listPurchase.do");
 		
 		return modelAndView;
 	}
 	
 	@RequestMapping("/updateTranCodeByProd.do")
-	public ModelAndView updateTranCodeByProd(Purchase purchase, Search search, HttpSession session) throws Exception{
+	public ModelAndView updateTranCodeByProd(Product product, Purchase purchase, Search search, HttpSession session) throws Exception{
 		
 		System.out.println("/updateTranCodeByProd.do");
 		
-		
+		purchase.setPurchaseProd(product);
 		
 		purchaseService.updateTranCode(purchase);
 		
@@ -204,9 +204,7 @@ public class PurchaseController {
 		}
 		search.setPageSize(pageSize);
 		
-		String buyerId = ((User)session.getAttribute("user")).getUserId();
-		
-		Map<String, Object> map = purchaseService.getPurchaseList(search, buyerId);
+		Map<String, Object> map = productService.getProductList(search);
 		
 		Page resultPage = new Page(search.getCurrentPage(), ((Integer)map.get("totalCount")).intValue(), pageUnit, pageSize);
 		System.out.println(resultPage);
